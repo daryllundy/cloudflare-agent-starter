@@ -4,9 +4,9 @@
 
 ![Agent Starter Chat UI](./screenshot-empty-chat.webp)
 
-<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/agents-starter"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
+<a href="https://deploy.workers.cloudflare.com/?url=https://github.com/daryllundy/cloudflare-agent-starter"><img src="https://deploy.workers.cloudflare.com/button" alt="Deploy to Cloudflare"/></a>
 
-A production-ready starter template for building AI chat agents on Cloudflare, powered by the [Agents SDK](https://developers.cloudflare.com/agents/). This project was scaffolded from the official [`cloudflare/agents-starter`](https://github.com/cloudflare/agents-starter) template and extended with OpenAI model support.
+A refactored starter for building AI chat agents on Cloudflare, powered by the [Agents SDK](https://developers.cloudflare.com/agents/). This project began from the official [`cloudflare/agents-starter`](https://github.com/cloudflare/agents-starter) template and now includes an OpenAI-backed chat model, modular React UI, MCP server management, image attachments, scheduling tools, and unit-tested shared logic.
 
 ## What is Cloudflare Agents Week?
 
@@ -47,25 +47,26 @@ The key insight: traditional apps serve many users from one instance. Agents are
 ## Quick Start
 
 ```bash
-git clone https://github.com/cloudflare/agents-starter
-cd agents-starter
+git clone https://github.com/daryllundy/cloudflare-agent-starter.git
+cd cloudflare-agent-starter
 npm install
 npm run check
 ```
 
-For local development with OpenAI (instead of Workers AI):
+For local development with the current OpenAI-backed setup:
 
 ```bash
 # Create .dev.vars with your API key
 echo "OPENAI_API_KEY=your-key-here" > .dev.vars
 echo "OPENAI_BASE_URL=https://api.openai.com/v1" >> .dev.vars
 
-# Build and run
-npx vite build
-node_modules/.bin/wrangler dev --local
+# Start the app
+npm run dev
 ```
 
-Open [http://localhost:8787](http://localhost:8787) to see your agent in action.
+Run `npm run check` before committing to execute formatting, linting, TypeScript, and unit tests.
+
+Open [http://localhost:8787](http://localhost:8787) to use the app locally.
 
 Try these prompts:
 
@@ -79,15 +80,19 @@ Try these prompts:
 
 ```
 src/
-  app.tsx              # App composition
-  client.tsx           # React entry point
-  chat-config.ts       # Shared starter prompts
-  chat-logic.ts        # Pure chat helpers with unit tests
-  components/          # Header, input, message, and MCP UI
-  hooks/               # Chat agent and attachment state hooks
-  server.ts            # Durable Object entrypoint
-  server/              # Prompt, model, message, and tool composition
-  styles.css           # Tailwind + Kumo styles
+  app.tsx                 # Top-level app composition
+  client.tsx              # React entry point
+  chat-config.ts          # Shared starter prompts and UI constants
+  chat-logic.ts           # Pure chat helpers with unit tests
+  components/             # Header, input, message, theme, and MCP UI
+  hooks/                  # Chat agent and attachment state hooks
+  server.ts               # Durable Object entrypoint
+  server/
+    messages.ts           # Incoming message normalization
+    model.ts              # Model provider wiring
+    prompt.ts             # System prompt construction
+    tools.ts              # Server-side tool definitions
+  styles.css              # Tailwind + Kumo styles
 ```
 
 ## Architecture
@@ -95,10 +100,12 @@ src/
 This agent runs on **Cloudflare Workers** with **Durable Objects** providing per-agent state. Each chat session is a unique Durable Object instance with its own SQLite database. The agent:
 
 1. Receives messages via WebSocket
-2. Calls the LLM (Workers AI or OpenAI) with the conversation history
-3. Executes tools (weather, calculator, scheduler) as needed
-4. Persists all messages in SQLite
-5. Hibernates when idle — zero compute cost
+2. Normalizes and prunes chat history before model execution
+3. Calls the LLM with the conversation history
+4. Executes tools (weather, calculator, scheduler, MCP tools) as needed
+5. Streams structured UI messages back to the client
+6. Persists all messages in SQLite
+7. Hibernates when idle — zero compute cost
 
 ## What's Included
 
@@ -109,9 +116,10 @@ This agent runs on **Cloudflare Workers** with **Durable Objects** providing per
 - **Reasoning display** — shows model thinking as it streams, collapses when done
 - **Debug mode** — toggle in the header to inspect raw message JSON
 - **Kumo UI** — Cloudflare's design system with dark/light mode
+- **Modular frontend** — chat state, attachments, MCP UI, and message rendering are split into focused hooks and components
 - **Real-time** — WebSocket connection with automatic reconnection and message persistence
 - **MCP support** — Connect external tools from any MCP server
-- **Unit tests** — Vitest coverage for extracted prompt and message logic
+- **Unit tests** — Vitest coverage for extracted prompt, message normalization, and shared helper logic
 
 ## Development Workflow
 
@@ -120,21 +128,21 @@ npm run dev
 ```
 
 ```bash
+npm test
+```
+
+```bash
 npm run check
 ```
 
-`npm run check` runs formatting, linting, TypeScript, and unit tests.
+`npm test` runs the Vitest suite. `npm run check` runs formatting, linting, TypeScript, and unit tests.
 
 ## Using a Different AI Model
 
-### OpenAI (used in this fork)
-
-```bash
-npm install @ai-sdk/openai
-```
+### OpenAI (current default)
 
 ```ts
-// In src/server.ts:
+// In src/server/model.ts:
 import { createOpenAI } from "@ai-sdk/openai";
 
 const openai = createOpenAI({
@@ -142,10 +150,9 @@ const openai = createOpenAI({
 	baseURL: this.env.OPENAI_BASE_URL
 });
 
-const result = streamText({
-	model: openai("gpt-4.1-mini")
-	// ...
-});
+export function createChatModel(env: Env) {
+	return openai("gpt-4.1-mini");
+}
 ```
 
 Add to `wrangler.jsonc`:
@@ -164,16 +171,16 @@ OPENAI_API_KEY=sk-...
 OPENAI_BASE_URL=https://api.openai.com/v1
 ```
 
-### Workers AI (default, no API key needed)
+### Workers AI
 
 ```ts
+// Swap src/server/model.ts to use Workers AI instead:
 import { createWorkersAI } from "workers-ai-provider";
 
-const workersai = createWorkersAI({ binding: this.env.AI });
-const result = streamText({
-	model: workersai("@cf/moonshotai/kimi-k2.6")
-	// ...
-});
+export function createChatModel(env: Env) {
+	const workersai = createWorkersAI({ binding: env.AI });
+	return workersai("@cf/moonshotai/kimi-k2.6");
+}
 ```
 
 ## Deploy to Cloudflare
