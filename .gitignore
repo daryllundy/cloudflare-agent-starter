@@ -50,6 +50,7 @@ web_modules/
 
 # Optional npm cache directory
 .npm
+.npm-cache/
 
 # Optional eslint cache
 .eslintcache
@@ -141,4 +142,3 @@ dist
 # Cloudflare
 .wrangler
 .dev.vars
-
