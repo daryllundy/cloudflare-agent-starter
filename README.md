@@ -12,31 +12,36 @@ A production-ready starter template for building AI chat agents on Cloudflare, p
 
 Cloudflare held **Agents Week** (April 12–18, 2026), announcing a full suite of primitives for building AI agents at scale. The centerpiece was **[Project Think](https://blog.cloudflare.com/project-think/)** — the next generation of the Agents SDK — which introduced:
 
-| Feature | Description |
-|---|---|
-| **Durable Execution (Fibers)** | Crash-recovery and checkpointing for long-running LLM calls |
-| **Sub-agents** | Isolated child agents with their own SQLite and typed RPC |
-| **Persistent Sessions** | Tree-structured message history with forking and full-text search |
-| **Sandboxed Code Execution** | Dynamic Workers, runtime npm resolution, browser automation |
-| **Self-authored Extensions** | Agents that write their own tools at runtime |
+| Feature                        | Description                                                       |
+| ------------------------------ | ----------------------------------------------------------------- |
+| **Durable Execution (Fibers)** | Crash-recovery and checkpointing for long-running LLM calls       |
+| **Sub-agents**                 | Isolated child agents with their own SQLite and typed RPC         |
+| **Persistent Sessions**        | Tree-structured message history with forking and full-text search |
+| **Sandboxed Code Execution**   | Dynamic Workers, runtime npm resolution, browser automation       |
+| **Self-authored Extensions**   | Agents that write their own tools at runtime                      |
 
 The key insight: traditional apps serve many users from one instance. Agents are **one-to-one** — each agent is a unique instance for one user or task. Cloudflare's Durable Objects make this economically viable by hibernating agents when idle (zero compute cost) and waking them on demand.
 
 ## Screenshots
 
 ### Empty Chat (Light Mode)
+
 ![Empty chat interface](./screenshot-empty-chat.webp)
 
 ### Weather Tool Response (Server-side auto-execute)
+
 ![Weather tool response](./screenshot-weather-response.webp)
 
 ### Calculation with Human-in-the-Loop Approval
+
 ![Approval required for large calculation](./screenshot-approval.webp)
 
 ### Calculation Result After Approval
+
 ![Calculation result](./screenshot-calculation.webp)
 
 ### Dark Mode
+
 ![Dark mode interface](./screenshot-dark-mode.webp)
 
 ## Quick Start
@@ -114,17 +119,18 @@ npm install @ai-sdk/openai
 import { createOpenAI } from "@ai-sdk/openai";
 
 const openai = createOpenAI({
-  apiKey: this.env.OPENAI_API_KEY,
-  baseURL: this.env.OPENAI_BASE_URL
+	apiKey: this.env.OPENAI_API_KEY,
+	baseURL: this.env.OPENAI_BASE_URL
 });
 
 const result = streamText({
-  model: openai("gpt-4.1-mini"),
-  // ...
+	model: openai("gpt-4.1-mini")
+	// ...
 });
 ```
 
 Add to `wrangler.jsonc`:
+
 ```json
 "vars": {
   "OPENAI_API_KEY": "",
@@ -133,6 +139,7 @@ Add to `wrangler.jsonc`:
 ```
 
 Add to `.dev.vars` (local only, never commit):
+
 ```
 OPENAI_API_KEY=sk-...
 OPENAI_BASE_URL=https://api.openai.com/v1
@@ -145,8 +152,8 @@ import { createWorkersAI } from "workers-ai-provider";
 
 const workersai = createWorkersAI({ binding: this.env.AI });
 const result = streamText({
-  model: workersai("@cf/moonshotai/kimi-k2.6"),
-  // ...
+	model: workersai("@cf/moonshotai/kimi-k2.6")
+	// ...
 });
 ```
 
