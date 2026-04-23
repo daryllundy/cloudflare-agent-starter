@@ -50,6 +50,7 @@ The key insight: traditional apps serve many users from one instance. Agents are
 git clone https://github.com/cloudflare/agents-starter
 cd agents-starter
 npm install
+npm run check
 ```
 
 For local development with OpenAI (instead of Workers AI):
@@ -78,10 +79,15 @@ Try these prompts:
 
 ```
 src/
-  server.ts    # Chat agent with tools and scheduling
-  app.tsx      # Chat UI built with Kumo components
-  client.tsx   # React entry point
-  styles.css   # Tailwind + Kumo styles
+  app.tsx              # App composition
+  client.tsx           # React entry point
+  chat-config.ts       # Shared starter prompts
+  chat-logic.ts        # Pure chat helpers with unit tests
+  components/          # Header, input, message, and MCP UI
+  hooks/               # Chat agent and attachment state hooks
+  server.ts            # Durable Object entrypoint
+  server/              # Prompt, model, message, and tool composition
+  styles.css           # Tailwind + Kumo styles
 ```
 
 ## Architecture
@@ -105,6 +111,19 @@ This agent runs on **Cloudflare Workers** with **Durable Objects** providing per
 - **Kumo UI** — Cloudflare's design system with dark/light mode
 - **Real-time** — WebSocket connection with automatic reconnection and message persistence
 - **MCP support** — Connect external tools from any MCP server
+- **Unit tests** — Vitest coverage for extracted prompt and message logic
+
+## Development Workflow
+
+```bash
+npm run dev
+```
+
+```bash
+npm run check
+```
+
+`npm run check` runs formatting, linting, TypeScript, and unit tests.
 
 ## Using a Different AI Model
 
