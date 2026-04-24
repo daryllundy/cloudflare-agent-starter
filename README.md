@@ -59,6 +59,7 @@ For local development with the current OpenAI-backed setup:
 # Create .dev.vars with your API key
 echo "OPENAI_API_KEY=your-key-here" > .dev.vars
 echo "OPENAI_BASE_URL=https://api.openai.com/v1" >> .dev.vars
+echo "OPENAI_MODEL=gpt-4.1-mini" >> .dev.vars
 
 # Start the app
 npm run dev
@@ -151,7 +152,7 @@ const openai = createOpenAI({
 });
 
 export function createChatModel(env: Env) {
-	return openai("gpt-4.1-mini");
+	return openai(env.OPENAI_MODEL || "gpt-4.1-mini");
 }
 ```
 
@@ -160,7 +161,8 @@ Add to `wrangler.jsonc`:
 ```json
 "vars": {
   "OPENAI_API_KEY": "",
-  "OPENAI_BASE_URL": ""
+  "OPENAI_BASE_URL": "https://api.openai.com/v1",
+  "OPENAI_MODEL": "gpt-4.1-mini"
 }
 ```
 
@@ -169,7 +171,19 @@ Add to `.dev.vars` (local only, never commit):
 ```
 OPENAI_API_KEY=sk-...
 OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4.1-mini
 ```
+
+For production, prefer storing `OPENAI_API_KEY` as a Cloudflare secret:
+
+```bash
+wrangler secret put OPENAI_API_KEY
+```
+
+If `OPENAI_BASE_URL` points to Cloudflare AI Gateway:
+
+- Use `gpt-4.1-mini` with the provider-specific `/openai` endpoint.
+- Use `openai/gpt-4.1-mini` with the OpenAI-compatible `/compat` endpoint.
 
 ### Workers AI
 

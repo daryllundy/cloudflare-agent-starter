@@ -20,6 +20,7 @@ function Chat() {
 		isStreaming,
 		mcpState,
 		messages,
+		runtimeConfig,
 		sendMessage,
 		stop
 	} = useChatAgent();
@@ -112,6 +113,7 @@ function Chat() {
 				onAddServer={handleAddServer}
 				onClearHistory={clearHistory}
 				onRemoveServer={handleRemoveServer}
+				runtimeConfig={runtimeConfig}
 				setShowDebug={setShowDebug}
 				showDebug={showDebug}
 			/>

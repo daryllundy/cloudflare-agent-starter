@@ -15,6 +15,10 @@ interface ChatHeaderProps {
 	onAddServer: (name: string, url: string) => Promise<void>;
 	onClearHistory: () => void;
 	onRemoveServer: (serverId: string) => Promise<void>;
+	runtimeConfig: {
+		model: string;
+		provider: "openai";
+	} | null;
 	setShowDebug: (showDebug: boolean) => void;
 	showDebug: boolean;
 }
@@ -25,6 +29,7 @@ export function ChatHeader({
 	onAddServer,
 	onClearHistory,
 	onRemoveServer,
+	runtimeConfig,
 	setShowDebug,
 	showDebug
 }: ChatHeaderProps) {
@@ -43,6 +48,11 @@ export function ChatHeader({
 						/>
 						AI Chat
 					</Badge>
+					{runtimeConfig && (
+						<Badge variant="secondary" className="font-mono">
+							{runtimeConfig.model}
+						</Badge>
+					)}
 				</div>
 				<div className="flex items-center gap-3">
 					<div className="flex items-center gap-1.5">
