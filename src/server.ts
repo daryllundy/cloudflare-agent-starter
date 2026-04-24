@@ -2,7 +2,7 @@ import { callable, routeAgentRequest, type Schedule } from "agents";
 import { AIChatAgent, type OnChatMessageOptions } from "@cloudflare/ai-chat";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { normalizeIncomingMessages } from "./server/messages";
-import { createChatModel } from "./server/model";
+import { createChatModel, getChatRuntimeConfig } from "./server/model";
 import { buildSystemPrompt } from "./server/prompt";
 import { buildChatTools } from "./server/tools";
 
@@ -25,6 +25,8 @@ export class ChatAgent extends AIChatAgent<Env> {
 				);
 			}
 		});
+
+		console.log("Chat runtime configured", getChatRuntimeConfig(this.env));
 	}
 
 	@callable()
@@ -35,6 +37,11 @@ export class ChatAgent extends AIChatAgent<Env> {
 	@callable()
 	async removeServer(serverId: string) {
 		await this.removeMcpServer(serverId);
+	}
+
+	@callable()
+	async getRuntimeConfig() {
+		return getChatRuntimeConfig(this.env);
 	}
 
 	async onChatMessage(_onFinish: unknown, options?: OnChatMessageOptions) {

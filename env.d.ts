@@ -10,6 +10,7 @@ declare namespace Cloudflare {
 		ChatAgent: DurableObjectNamespace<import("./src/server").ChatAgent>;
 		OPENAI_API_KEY: string;
 		OPENAI_BASE_URL: string;
+		OPENAI_MODEL: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

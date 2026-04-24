@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { MCPServersState } from "agents";
 import { useAgent } from "agents/react";
 import { useAgentChat } from "@cloudflare/ai-chat/react";
@@ -12,10 +12,17 @@ const INITIAL_MCP_STATE: MCPServersState = {
 	tools: []
 };
 
+interface ChatRuntimeConfig {
+	model: string;
+	provider: "openai";
+}
+
 export function useChatAgent() {
 	const [connected, setConnected] = useState(false);
 	const [mcpState, setMcpState] =
 		useState<MCPServersState>(INITIAL_MCP_STATE);
+	const [runtimeConfig, setRuntimeConfig] =
+		useState<ChatRuntimeConfig | null>(null);
 	const toasts = useKumoToastManager();
 
 	const agent = useAgent<ChatAgent>({
@@ -67,11 +74,34 @@ export function useChatAgent() {
 		}
 	});
 
+	useEffect(() => {
+		let cancelled = false;
+
+		void agent.stub
+			.getRuntimeConfig()
+			.then((config: ChatRuntimeConfig) => {
+				if (!cancelled) {
+					setRuntimeConfig({
+						model: config.model,
+						provider: config.provider
+					});
+				}
+			})
+			.catch((error: unknown) => {
+				console.error("Failed to load chat runtime config:", error);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [agent.stub]);
+
 	return {
 		agent,
 		...chat,
 		connected,
 		isStreaming: chat.status === "streaming" || chat.status === "submitted",
-		mcpState
+		mcpState,
+		runtimeConfig
 	};
 }
