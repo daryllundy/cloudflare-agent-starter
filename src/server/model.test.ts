@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	DEFAULT_OPENAI_BASE_URL,
 	DEFAULT_OPENAI_MODEL,
-	createChatModel,
+	DEFAULT_WORKERS_AI_MODEL,
 	getChatRuntimeConfig
 } from "./model";
 
@@ -53,16 +53,34 @@ describe("getChatRuntimeConfig", () => {
 			provider: "openai"
 		});
 	});
-});
 
-describe("createChatModel", () => {
-	it("throws a clear error when the OpenAI key is blank", () => {
-		expect(() =>
-			createChatModel(
+	it("falls back to Workers AI when no OpenAI key is configured", () => {
+		expect(
+			getChatRuntimeConfig(
 				makeEnv({
-					OPENAI_API_KEY: "   "
+					OPENAI_API_KEY: "",
+					OPENAI_MODEL: "   "
 				})
 			)
-		).toThrow("OPENAI_API_KEY is not configured");
+		).toEqual({
+			baseURL: "",
+			model: DEFAULT_WORKERS_AI_MODEL,
+			provider: "workers-ai"
+		});
+	});
+
+	it("uses Workers AI with the explicit model override", () => {
+		expect(
+			getChatRuntimeConfig(
+				makeEnv({
+					OPENAI_API_KEY: "   ",
+					OPENAI_MODEL: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+				})
+			)
+		).toEqual({
+			baseURL: "",
+			model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+			provider: "workers-ai"
+		});
 	});
 });
