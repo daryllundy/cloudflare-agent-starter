@@ -17,7 +17,7 @@ interface ChatHeaderProps {
 	onRemoveServer: (serverId: string) => Promise<void>;
 	runtimeConfig: {
 		model: string;
-		provider: "openai" | "workers-ai";
+		provider: "openrouter" | "workers-ai";
 	} | null;
 	setShowDebug: (showDebug: boolean) => void;
 	showDebug: boolean;

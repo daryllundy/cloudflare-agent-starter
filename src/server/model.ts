@@ -1,11 +1,11 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createWorkersAI } from "workers-ai-provider";
 
-export const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
-export const DEFAULT_OPENAI_MODEL = "gpt-4.1-mini";
+export const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+export const DEFAULT_OPENROUTER_MODEL = "openai/gpt-4o-mini";
 export const DEFAULT_WORKERS_AI_MODEL = "@cf/moonshotai/kimi-k2.6";
 
-export type ChatProvider = "openai" | "workers-ai";
+export type ChatProvider = "openrouter" | "workers-ai";
 
 export interface ChatRuntimeConfig {
 	baseURL: string;
@@ -19,13 +19,15 @@ function resolveEnvString(value: string | undefined) {
 }
 
 export function getChatRuntimeConfig(env: Env): ChatRuntimeConfig {
-	const apiKey = resolveEnvString(env.OPENAI_API_KEY);
+	const apiKey = resolveEnvString(env.OPENROUTER_API_KEY);
 	if (apiKey) {
 		return {
 			baseURL:
-				resolveEnvString(env.OPENAI_BASE_URL) ?? DEFAULT_OPENAI_BASE_URL,
-			model: resolveEnvString(env.OPENAI_MODEL) ?? DEFAULT_OPENAI_MODEL,
-			provider: "openai"
+				resolveEnvString(env.OPENROUTER_BASE_URL) ??
+				DEFAULT_OPENROUTER_BASE_URL,
+			model:
+				resolveEnvString(env.OPENROUTER_MODEL) ?? DEFAULT_OPENROUTER_MODEL,
+			provider: "openrouter"
 		};
 	}
 
@@ -40,12 +42,12 @@ export function getChatRuntimeConfig(env: Env): ChatRuntimeConfig {
 export function createChatModel(env: Env) {
 	const runtimeConfig = getChatRuntimeConfig(env);
 
-	if (runtimeConfig.provider === "openai") {
-		const openai = createOpenAI({
-			apiKey: env.OPENAI_API_KEY,
+	if (runtimeConfig.provider === "openrouter") {
+		const openrouter = createOpenAI({
+			apiKey: env.OPENROUTER_API_KEY,
 			baseURL: runtimeConfig.baseURL
 		});
-		return openai(runtimeConfig.model);
+		return openrouter(runtimeConfig.model);
 	}
 
 	const workersai = createWorkersAI({ binding: env.AI });

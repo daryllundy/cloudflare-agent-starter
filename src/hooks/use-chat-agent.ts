@@ -14,7 +14,7 @@ const INITIAL_MCP_STATE: MCPServersState = {
 
 interface ChatRuntimeConfig {
 	model: string;
-	provider: "openai" | "workers-ai";
+	provider: "openrouter" | "workers-ai";
 }
 
 export function useChatAgent() {

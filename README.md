@@ -53,17 +53,21 @@ npm install
 npm run check
 ```
 
-For local development with the current OpenAI-backed setup:
+For local development with the OpenRouter-backed setup:
 
 ```bash
 # Create .dev.vars with your API key
-echo "OPENAI_API_KEY=your-key-here" > .dev.vars
-echo "OPENAI_BASE_URL=https://api.openai.com/v1" >> .dev.vars
-echo "OPENAI_MODEL=gpt-4.1-mini" >> .dev.vars
+echo "OPENROUTER_API_KEY=your-key-here" > .dev.vars
+echo "OPENROUTER_BASE_URL=https://openrouter.ai/api/v1" >> .dev.vars
+echo "OPENROUTER_MODEL=openai/gpt-4o-mini" >> .dev.vars
 
 # Start the app
 npm run dev
 ```
+
+If `OPENROUTER_API_KEY` is not set, the agent automatically falls back to
+Cloudflare Workers AI (`@cf/moonshotai/kimi-k2.6` by default; override via
+`WORKERS_AI_MODEL`).
 
 Run `npm run check` before committing to execute formatting, linting, TypeScript, and unit tests.
 
@@ -140,62 +144,46 @@ npm run check
 
 ## Using a Different AI Model
 
-### OpenAI (current default)
+### OpenRouter (current default)
 
-```ts
-// In src/server/model.ts:
-import { createOpenAI } from "@ai-sdk/openai";
+`src/server/model.ts` uses the OpenAI SDK pointed at OpenRouter, so any
+OpenAI-compatible model OpenRouter exposes works out of the box. Set
+`OPENROUTER_MODEL` to any slug from the
+[OpenRouter model list](https://openrouter.ai/models) — e.g.
+`openai/gpt-4o-mini`, `anthropic/claude-3.5-sonnet`,
+`meta-llama/llama-3.1-70b-instruct`.
 
-const openai = createOpenAI({
-	apiKey: this.env.OPENAI_API_KEY,
-	baseURL: this.env.OPENAI_BASE_URL
-});
-
-export function createChatModel(env: Env) {
-	return openai(env.OPENAI_MODEL || "gpt-4.1-mini");
-}
-```
-
-Add to `wrangler.jsonc`:
+`wrangler.jsonc` ships with:
 
 ```json
 "vars": {
-  "OPENAI_API_KEY": "",
-  "OPENAI_BASE_URL": "https://api.openai.com/v1",
-  "OPENAI_MODEL": "gpt-4.1-mini"
+  "OPENROUTER_BASE_URL": "https://openrouter.ai/api/v1",
+  "OPENROUTER_MODEL": "openai/gpt-4o-mini"
 }
 ```
 
 Add to `.dev.vars` (local only, never commit):
 
 ```
-OPENAI_API_KEY=sk-...
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4.1-mini
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL=openai/gpt-4o-mini
 ```
 
-For production, prefer storing `OPENAI_API_KEY` as a Cloudflare secret:
+For production, store `OPENROUTER_API_KEY` as a Cloudflare secret:
 
 ```bash
-wrangler secret put OPENAI_API_KEY
+wrangler secret put OPENROUTER_API_KEY
 ```
 
-If `OPENAI_BASE_URL` points to Cloudflare AI Gateway:
+`OPENROUTER_BASE_URL` can point at Cloudflare AI Gateway's OpenAI-compatible
+endpoint if you want gateway logging/caching.
 
-- Use `gpt-4.1-mini` with the provider-specific `/openai` endpoint.
-- Use `openai/gpt-4.1-mini` with the OpenAI-compatible `/compat` endpoint.
+### Workers AI fallback
 
-### Workers AI
-
-```ts
-// Swap src/server/model.ts to use Workers AI instead:
-import { createWorkersAI } from "workers-ai-provider";
-
-export function createChatModel(env: Env) {
-	const workersai = createWorkersAI({ binding: env.AI });
-	return workersai("@cf/moonshotai/kimi-k2.6");
-}
-```
+If `OPENROUTER_API_KEY` is unset, the agent uses the bound Workers AI model
+defined by `WORKERS_AI_MODEL` (default `@cf/moonshotai/kimi-k2.6`). No code
+changes required — set or unset the secret to switch providers.
 
 ## Deploy to Cloudflare
 
