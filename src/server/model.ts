@@ -31,7 +31,8 @@ export function getChatRuntimeConfig(env: Env): ChatRuntimeConfig {
 
 	return {
 		baseURL: "",
-		model: resolveEnvString(env.OPENAI_MODEL) ?? DEFAULT_WORKERS_AI_MODEL,
+		model:
+			resolveEnvString(env.WORKERS_AI_MODEL) ?? DEFAULT_WORKERS_AI_MODEL,
 		provider: "workers-ai"
 	};
 }
