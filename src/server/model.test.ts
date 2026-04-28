@@ -8,7 +8,13 @@ import {
 
 function makeEnv(
 	overrides: Partial<
-		Pick<Env, "OPENAI_API_KEY" | "OPENAI_BASE_URL" | "OPENAI_MODEL">
+		Pick<
+			Env,
+			| "OPENAI_API_KEY"
+			| "OPENAI_BASE_URL"
+			| "OPENAI_MODEL"
+			| "WORKERS_AI_MODEL"
+		>
 	> = {}
 ) {
 	return {
@@ -58,8 +64,7 @@ describe("getChatRuntimeConfig", () => {
 		expect(
 			getChatRuntimeConfig(
 				makeEnv({
-					OPENAI_API_KEY: "",
-					OPENAI_MODEL: "   "
+					OPENAI_API_KEY: ""
 				})
 			)
 		).toEqual({
@@ -69,12 +74,27 @@ describe("getChatRuntimeConfig", () => {
 		});
 	});
 
-	it("uses Workers AI with the explicit model override", () => {
+	it("ignores OPENAI_MODEL when falling back to Workers AI", () => {
+		expect(
+			getChatRuntimeConfig(
+				makeEnv({
+					OPENAI_API_KEY: "",
+					OPENAI_MODEL: "gpt-4.1-mini"
+				})
+			)
+		).toEqual({
+			baseURL: "",
+			model: DEFAULT_WORKERS_AI_MODEL,
+			provider: "workers-ai"
+		});
+	});
+
+	it("uses WORKERS_AI_MODEL override when provided", () => {
 		expect(
 			getChatRuntimeConfig(
 				makeEnv({
 					OPENAI_API_KEY: "   ",
-					OPENAI_MODEL: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+					WORKERS_AI_MODEL: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
 				})
 			)
 		).toEqual({

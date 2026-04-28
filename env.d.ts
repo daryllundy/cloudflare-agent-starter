@@ -14,6 +14,7 @@ declare namespace Cloudflare {
 }
 interface Env extends Cloudflare.Env {
 	OPENAI_API_KEY?: string;
+	WORKERS_AI_MODEL?: string;
 }
 type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
