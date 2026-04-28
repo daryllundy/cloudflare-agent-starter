@@ -1,12 +1,16 @@
 import { createOpenAI } from "@ai-sdk/openai";
+import { createWorkersAI } from "workers-ai-provider";
 
 export const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 export const DEFAULT_OPENAI_MODEL = "gpt-4.1-mini";
+export const DEFAULT_WORKERS_AI_MODEL = "@cf/moonshotai/kimi-k2.6";
+
+export type ChatProvider = "openai" | "workers-ai";
 
 export interface ChatRuntimeConfig {
 	baseURL: string;
 	model: string;
-	provider: "openai";
+	provider: ChatProvider;
 }
 
 function resolveEnvString(value: string | undefined) {
@@ -14,30 +18,35 @@ function resolveEnvString(value: string | undefined) {
 	return trimmed ? trimmed : undefined;
 }
 
-function requireEnvString(name: string, value: string | undefined) {
-	const resolved = resolveEnvString(value);
-	if (resolved) return resolved;
-
-	throw new Error(
-		`${name} is not configured. Set it as a Cloudflare secret or environment variable before chatting.`
-	);
-}
-
 export function getChatRuntimeConfig(env: Env): ChatRuntimeConfig {
+	const apiKey = resolveEnvString(env.OPENAI_API_KEY);
+	if (apiKey) {
+		return {
+			baseURL:
+				resolveEnvString(env.OPENAI_BASE_URL) ?? DEFAULT_OPENAI_BASE_URL,
+			model: resolveEnvString(env.OPENAI_MODEL) ?? DEFAULT_OPENAI_MODEL,
+			provider: "openai"
+		};
+	}
+
 	return {
-		baseURL:
-			resolveEnvString(env.OPENAI_BASE_URL) ?? DEFAULT_OPENAI_BASE_URL,
-		model: resolveEnvString(env.OPENAI_MODEL) ?? DEFAULT_OPENAI_MODEL,
-		provider: "openai"
+		baseURL: "",
+		model: resolveEnvString(env.OPENAI_MODEL) ?? DEFAULT_WORKERS_AI_MODEL,
+		provider: "workers-ai"
 	};
 }
 
 export function createChatModel(env: Env) {
 	const runtimeConfig = getChatRuntimeConfig(env);
-	const openai = createOpenAI({
-		apiKey: requireEnvString("OPENAI_API_KEY", env.OPENAI_API_KEY),
-		baseURL: runtimeConfig.baseURL
-	});
 
-	return openai(runtimeConfig.model);
+	if (runtimeConfig.provider === "openai") {
+		const openai = createOpenAI({
+			apiKey: env.OPENAI_API_KEY,
+			baseURL: runtimeConfig.baseURL
+		});
+		return openai(runtimeConfig.model);
+	}
+
+	const workersai = createWorkersAI({ binding: env.AI });
+	return workersai(runtimeConfig.model);
 }
